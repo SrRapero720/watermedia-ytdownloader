@@ -4,6 +4,7 @@
 # Compiled dirs
 target
 out
+build
 
 
 # Log file
