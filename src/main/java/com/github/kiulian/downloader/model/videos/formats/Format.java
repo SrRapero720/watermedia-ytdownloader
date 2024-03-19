@@ -1,10 +1,8 @@
 package com.github.kiulian.downloader.model.videos.formats;
 
 
-
-
-import com.alibaba.fastjson.JSONObject;
 import com.github.kiulian.downloader.model.Extension;
+import com.google.gson.JsonObject;
 
 public abstract class Format {
 
@@ -24,26 +22,26 @@ public abstract class Format {
     protected final Long approxDurationMs;
     protected final String clientVersion;
 
-    protected Format(JSONObject json, boolean isAdaptive, String clientVersion) {
+    protected Format(JsonObject json, boolean isAdaptive, String clientVersion) {
         this.isAdaptive = isAdaptive;
         this.clientVersion = clientVersion;
 
         Itag itag;
         try {
-            itag = Itag.valueOf("i" + json.getInteger("itag"));
+            itag = Itag.valueOf("i" + json.getAsJsonPrimitive("itag").getAsInt());
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
             itag = Itag.unknown;
-            itag.setId(json.getIntValue("itag"));
+            itag.setId(json.getAsJsonPrimitive("itag").getAsInt());
         }
         this.itag = itag;
 
-        url = json.getString("url").replace("\\u0026", "&");
-        mimeType = json.getString("mimeType");
-        bitrate = json.getInteger("bitrate");
-        contentLength = json.getLong("contentLength");
-        lastModified = json.getLong("lastModified");
-        approxDurationMs = json.getLong("approxDurationMs");
+        url = json.getAsJsonPrimitive("url").getAsString().replace("\\u0026", "&");
+        mimeType = json.getAsJsonPrimitive("mimeType").getAsString();
+        bitrate = json.getAsJsonPrimitive("bitrate").getAsInt();
+        contentLength = json.getAsJsonPrimitive("contentLength").getAsLong();
+        lastModified = json.getAsJsonPrimitive("lastModified").getAsLong();
+        approxDurationMs = json.getAsJsonPrimitive("approxDurationMs").getAsLong();
 
         if (mimeType == null || mimeType.isEmpty()) {
             extension = Extension.UNKNOWN;

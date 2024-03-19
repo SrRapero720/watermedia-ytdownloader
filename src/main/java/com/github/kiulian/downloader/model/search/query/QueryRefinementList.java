@@ -1,24 +1,24 @@
 package com.github.kiulian.downloader.model.search.query;
 
-import java.util.ArrayList;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
+import java.util.ArrayList;
 
 @SuppressWarnings("serial")
 public class QueryRefinementList extends ArrayList<QueryRefinement> implements QueryElement {
 
     private final String title;
 
-    public QueryRefinementList(JSONObject json) {
-        super(json.getJSONArray("cards").size());
-        title = json.getJSONObject("header")
-                .getJSONObject("richListHeaderRenderer")
-                .getJSONObject("title")
-                .getString("simpleText");
-        JSONArray jsonCards = json.getJSONArray("cards");
+    public QueryRefinementList(JsonObject json) {
+        super(json.getAsJsonArray("cards").size());
+        title = json.getAsJsonObject("header")
+                .getAsJsonObject("richListHeaderRenderer")
+                .getAsJsonObject("title")
+                .getAsJsonPrimitive("simpleText").getAsString();
+        JsonArray jsonCards = json.getAsJsonArray("cards");
         for (int i = 0; i < jsonCards.size(); i++) {
-            JSONObject jsonRenderer = jsonCards.getJSONObject(i).getJSONObject("searchRefinementCardRenderer"); 
+            JsonObject jsonRenderer = jsonCards.get(i).getAsJsonObject().getAsJsonObject("searchRefinementCardRenderer");
             add(new QueryRefinement(jsonRenderer));
         }
     }

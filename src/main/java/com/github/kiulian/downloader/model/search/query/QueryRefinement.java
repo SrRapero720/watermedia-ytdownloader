@@ -1,17 +1,17 @@
 package com.github.kiulian.downloader.model.search.query;
 
-import java.util.List;
-
-import com.alibaba.fastjson.JSONObject;
 import com.github.kiulian.downloader.model.Utils;
+import com.google.gson.JsonObject;
+
+import java.util.List;
 
 public class QueryRefinement extends Searchable {
 
     private final List<String> thumbnails;
 
-    public QueryRefinement(JSONObject json) {
+    public QueryRefinement(JsonObject json) {
         super(json);
-        thumbnails = Utils.parseThumbnails(json.getJSONObject("thumbnail"));
+        thumbnails = Utils.parseThumbnails(json.getAsJsonObject("thumbnail"));
     }
 
     public List<String> thumbnails() {
@@ -19,16 +19,16 @@ public class QueryRefinement extends Searchable {
     }
 
     @Override
-    protected String extractQuery(JSONObject json) {
-        return Utils.parseRuns(json.getJSONObject("query"));
+    protected String extractQuery(JsonObject json) {
+        return Utils.parseRuns(json.getAsJsonObject("query"));
     }
 
     @Override
-    protected String extractSearchPath(JSONObject json) {
-        return json.getJSONObject("searchEndpoint")
-                .getJSONObject("commandMetadata")
-                .getJSONObject("webCommandMetadata")
-                .getString("url");
+    protected String extractSearchPath(JsonObject json) {
+        return json.getAsJsonObject("searchEndpoint")
+                .getAsJsonObject("commandMetadata")
+                .getAsJsonObject("webCommandMetadata")
+                .getAsJsonPrimitive("url").getAsString();
     }
 
 }

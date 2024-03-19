@@ -1,12 +1,12 @@
 package com.github.kiulian.downloader.model.search;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.github.kiulian.downloader.model.AbstractListVideoDetails;
 import com.github.kiulian.downloader.model.Utils;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class SearchResultVideoDetails extends AbstractListVideoDetails implements SearchResultItem {
 
@@ -21,53 +21,53 @@ public class SearchResultVideoDetails extends AbstractListVideoDetails implement
     // Animated images
     private List<String> richThumbnails;
 
-    public SearchResultVideoDetails(JSONObject json, boolean isMovie) {
+    public SearchResultVideoDetails(JsonObject json, boolean isMovie) {
         super(json);
         this.isMovie = isMovie;
-        if (json.containsKey("lengthText")) {
-            String lengthText = json.getJSONObject("lengthText").getString("simpleText");
+        if (json.has("lengthText")) {
+            String lengthText = json.getAsJsonObject("lengthText").getAsJsonPrimitive("simpleText").getAsString();
             lengthSeconds = Utils.parseLengthSeconds(lengthText);
         }
         if (isMovie) {
-            description = Utils.parseRuns(json.getJSONObject("descriptionSnippet"));
-        } else if (json.containsKey("detailedMetadataSnippets")) {
-            description = Utils.parseRuns(json.getJSONArray("detailedMetadataSnippets")
-                    .getJSONObject(0)
-                    .getJSONObject("snippetText"));
+            description = Utils.parseRuns(json.getAsJsonObject("descriptionSnippet"));
+        } else if (json.has("detailedMetadataSnippets")) {
+            description = Utils.parseRuns(json.getAsJsonArray("detailedMetadataSnippets")
+                    .get(0).getAsJsonObject()
+                    .getAsJsonObject("snippetText"));
         }
-        if (json.containsKey("upcomingEventData")) {
-            String startTimeText = json.getJSONObject("upcomingEventData").getString("startTime");
+        if (json.has("upcomingEventData")) {
+            String startTimeText = json.getAsJsonObject("upcomingEventData").getAsJsonPrimitive("startTime").getAsString();
             startTime = Long.parseLong(startTimeText);
             viewCount = -1;
-        } else if (json.containsKey("viewCountText")) {
-            JSONObject jsonCount = json.getJSONObject("viewCountText");
-            if (jsonCount.containsKey("simpleText")) {
-                viewCountText = jsonCount.getString("simpleText");
+        } else if (json.has("viewCountText")) {
+            JsonObject jsonCount = json.getAsJsonObject("viewCountText");
+            if (jsonCount.has("simpleText")) {
+                viewCountText = jsonCount.getAsJsonPrimitive("simpleText").getAsString();
                 viewCount = Utils.parseViewCount(viewCountText);
-            } else if (jsonCount.containsKey("runs")) {
+            } else if (jsonCount.has("runs")) {
                 viewCountText = Utils.parseRuns(jsonCount);
                 viewCount = -1;
             }
         }
-        if (json.containsKey("badges")) {
-            JSONArray jsonBadges = json.getJSONArray("badges");
+        if (json.has("badges")) {
+            JsonArray jsonBadges = json.getAsJsonArray("badges");
             badges = new ArrayList<>(jsonBadges.size());
             for (int i = 0; i < jsonBadges.size(); i++) {
-                JSONObject jsonBadge = jsonBadges.getJSONObject(i);
-                if (jsonBadge.containsKey("metadataBadgeRenderer")) {
-                    badges.add(jsonBadge.getJSONObject("metadataBadgeRenderer").getString("label"));
+                JsonObject jsonBadge = jsonBadges.get(i).getAsJsonObject();
+                if (jsonBadge.has("metadataBadgeRenderer")) {
+                    badges.add(jsonBadge.getAsJsonObject("metadataBadgeRenderer").getAsJsonPrimitive("label").getAsString());
                 }
             }
         }
-        if (json.containsKey("richThumbnail")) {
+        if (json.has("richThumbnail")) {
             try {
-                JSONArray jsonThumbs = json.getJSONObject("richThumbnail")
-                        .getJSONObject("movingThumbnailRenderer")
-                        .getJSONObject("movingThumbnailDetails")
-                        .getJSONArray("thumbnails");
+                JsonArray jsonThumbs = json.getAsJsonObject("richThumbnail")
+                        .getAsJsonObject("movingThumbnailRenderer")
+                        .getAsJsonObject("movingThumbnailDetails")
+                        .getAsJsonArray("thumbnails");
                 richThumbnails = new ArrayList<>(jsonThumbs.size());
                 for (int i = 0; i < jsonThumbs.size(); i++) {
-                    richThumbnails.add(jsonThumbs.getJSONObject(i).getString("url"));
+                    richThumbnails.add(jsonThumbs.get(i).getAsJsonObject().getAsJsonPrimitive("url").getAsString());
                 }
             } catch (NullPointerException ignored) {}
         }

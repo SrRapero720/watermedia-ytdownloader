@@ -1,9 +1,9 @@
 package com.github.kiulian.downloader.model.search;
 
-import java.util.List;
-
-import com.alibaba.fastjson.JSONObject;
 import com.github.kiulian.downloader.model.Utils;
+import com.google.gson.JsonObject;
+
+import java.util.List;
 
 public abstract class AbstractSearchResultList implements SearchResultItem {
 
@@ -13,9 +13,9 @@ public abstract class AbstractSearchResultList implements SearchResultItem {
 
     public AbstractSearchResultList() {}
 
-    public AbstractSearchResultList(JSONObject json) {
-        title = json.getJSONObject("title").getString("simpleText");
-        author = Utils.parseRuns(json.getJSONObject("shortBylineText"));
+    public AbstractSearchResultList(JsonObject json) {
+        title = json.getAsJsonObject("title").getAsJsonPrimitive("simpleText").getAsString();
+        author = Utils.parseRuns(json.getAsJsonObject("shortBylineText"));
     }
 
     @Override

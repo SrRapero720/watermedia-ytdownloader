@@ -1,12 +1,12 @@
 package com.github.kiulian.downloader.model.videos;
 
 
+import com.github.kiulian.downloader.model.AbstractVideoDetails;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import com.alibaba.fastjson.JSONObject;
-import com.github.kiulian.downloader.YoutubeException;
-import com.github.kiulian.downloader.model.AbstractVideoDetails;
 
 public class VideoDetails extends AbstractVideoDetails {
 
@@ -21,17 +21,23 @@ public class VideoDetails extends AbstractVideoDetails {
         this.videoId = videoId;
     }
 
-    public VideoDetails(JSONObject json, String liveHLSUrl) {
+    public VideoDetails(JsonObject json, String liveHLSUrl) {
         super(json);
-        title = json.getString("title");
-        author = json.getString("author");
-        isLive = json.getBooleanValue("isLive");
+        title = json.getAsJsonPrimitive("title").getAsString();
+        author = json.getAsJsonPrimitive("author").getAsString();
+        isLive = json.getAsJsonPrimitive("isLive").getAsBoolean();
 
-        keywords = json.containsKey("keywords") ? json.getJSONArray("keywords").toJavaList(String.class) : new ArrayList<String>();
-        shortDescription = json.getString("shortDescription");
-        averageRating = json.getIntValue("averageRating");
-        viewCount = json.getLongValue("viewCount");
-        isLiveContent = json.getBooleanValue("isLiveContent");
+        keywords = new ArrayList<>();
+        List<JsonElement> keywordsJson = json.has("keywords") ? json.getAsJsonArray("keywords").asList() : new ArrayList<>();
+
+        for (JsonElement e: keywordsJson) {
+            keywords.add(e.getAsString());
+        }
+
+        shortDescription = json.getAsJsonPrimitive("shortDescription").getAsString();
+        averageRating = json.getAsJsonPrimitive("averageRating").getAsInt();
+        viewCount = json.getAsJsonPrimitive("viewCount").getAsLong();
+        isLiveContent = json.getAsJsonPrimitive("isLiveContent").getAsBoolean();
         liveUrl = liveHLSUrl;
     }
 

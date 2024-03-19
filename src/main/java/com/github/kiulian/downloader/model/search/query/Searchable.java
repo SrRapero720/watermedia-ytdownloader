@@ -1,16 +1,16 @@
 package com.github.kiulian.downloader.model.search.query;
 
-import com.alibaba.fastjson.JSONObject;
+import com.google.gson.JsonObject;
 
 public abstract class Searchable {
 
     protected final String query;
     protected final String searchPath;
 
-    protected abstract String extractQuery(JSONObject json);
-    protected abstract String extractSearchPath(JSONObject json);
+    protected abstract String extractQuery(JsonObject json);
+    protected abstract String extractSearchPath(JsonObject json);
 
-    public Searchable(JSONObject json) {
+    public Searchable(JsonObject json) {
         super();
         this.query = extractQuery(json);
         this.searchPath = extractSearchPath(json);

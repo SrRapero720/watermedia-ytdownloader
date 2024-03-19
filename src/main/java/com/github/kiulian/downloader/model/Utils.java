@@ -1,14 +1,14 @@
 package com.github.kiulian.downloader.model;
 
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
-
-import java.io.*;
+import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 
 public class Utils {
 
@@ -74,37 +74,37 @@ public class Utils {
         return 0;
     }
 
-    public static String parseRuns(JSONObject container) {
+    public static String parseRuns(JsonObject container) {
         if (container == null) {
             return null;
         }
-        JSONArray runs = container.getJSONArray("runs");
+        JsonArray runs = container.getAsJsonArray("runs");
         if (runs == null) {
             return null;
         } else if (runs.size() == 1) {
-            return runs.getJSONObject(0).getString("text");
+            return runs.get(0).getAsJsonObject().getAsJsonPrimitive("text").getAsString();
         } else {
             StringBuilder builder = new StringBuilder();
             for (int i = 0; i < runs.size(); i++) {
-                builder.append(runs.getJSONObject(i).getString("text"));
+                builder.append(runs.get(i).getAsJsonObject().getAsJsonPrimitive("text").getAsString());
             }
             return builder.toString();
         }
     }
 
-    public static List<String> parseThumbnails(JSONObject container) {
+    public static List<String> parseThumbnails(JsonObject container) {
         if (container == null) {
             return null;
         }
-        JSONArray jsonThumbnails = container.getJSONArray("thumbnails");
+        JsonArray jsonThumbnails = container.getAsJsonArray("thumbnails");
         if (jsonThumbnails == null) {
             return null;
         } else {
-            List<String> thumbnails = new ArrayList<String>(jsonThumbnails.size());
+            List<String> thumbnails = new ArrayList<>(jsonThumbnails.size());
             for (int i = 0; i < jsonThumbnails.size(); i++) {
-                JSONObject jsonThumbnail = jsonThumbnails.getJSONObject(i);
-                if (jsonThumbnail.containsKey("url")) {
-                    thumbnails.add(jsonThumbnail.getString("url"));
+                JsonObject jsonThumbnail = jsonThumbnails.get(i).getAsJsonObject();
+                if (jsonThumbnail.has("url")) {
+                    thumbnails.add(jsonThumbnail.getAsJsonPrimitive("url").getAsString());
                 }
             }
             return thumbnails;

@@ -1,13 +1,5 @@
 package com.github.kiulian.downloader.parser;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-
-import com.alibaba.fastjson.*;
 import com.github.kiulian.downloader.Config;
 import com.github.kiulian.downloader.YoutubeException;
 import com.github.kiulian.downloader.YoutubeException.BadPageException;
@@ -19,15 +11,29 @@ import com.github.kiulian.downloader.downloader.request.*;
 import com.github.kiulian.downloader.downloader.response.Response;
 import com.github.kiulian.downloader.downloader.response.ResponseImpl;
 import com.github.kiulian.downloader.extractor.Extractor;
-import com.github.kiulian.downloader.model.playlist.*;
+import com.github.kiulian.downloader.model.playlist.PlaylistDetails;
+import com.github.kiulian.downloader.model.playlist.PlaylistInfo;
+import com.github.kiulian.downloader.model.playlist.PlaylistVideoDetails;
 import com.github.kiulian.downloader.model.search.*;
 import com.github.kiulian.downloader.model.search.query.*;
 import com.github.kiulian.downloader.model.subtitles.SubtitlesInfo;
 import com.github.kiulian.downloader.model.videos.VideoDetails;
 import com.github.kiulian.downloader.model.videos.VideoInfo;
 import com.github.kiulian.downloader.model.videos.formats.*;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 public class ParserImpl implements Parser {
+    private static final Gson GSON = new Gson();
     private static final String ANDROID_APIKEY = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
 
     private final Config config;
@@ -95,16 +101,16 @@ public class ParserImpl implements Parser {
             return null;
         }
 
-        JSONObject playerResponse;
+        JsonObject playerResponse;
         try {
-            playerResponse = JSONObject.parseObject(response.data());
+            playerResponse = JsonParser.parseString(response.data()).getAsJsonObject();
         } catch (Exception ignore) {
             return null;
         }
 
         VideoDetails videoDetails = parseVideoDetails(videoId, playerResponse);
         if (videoDetails.isDownloadable()) {
-            JSONObject context = playerResponse.getJSONObject("responseContext");
+            JsonObject context = playerResponse.getAsJsonObject("responseContext");
             String clientVersion = extractor.extractClientVersionFromContext(context);
             List<Format> formats;
             try {
@@ -137,7 +143,7 @@ public class ParserImpl implements Parser {
         }
         String html = response.data();
 
-        JSONObject playerConfig;
+        JsonObject playerConfig;
         try {
             playerConfig = extractor.extractPlayerConfigFromHtml(html);
         } catch (YoutubeException e) {
@@ -147,10 +153,10 @@ public class ParserImpl implements Parser {
             throw e;
         }
 
-        JSONObject args = playerConfig.getJSONObject("args");
-        JSONObject playerResponse = args.getJSONObject("player_response");
+        JsonObject args = playerConfig.getAsJsonObject("args");
+        JsonObject playerResponse = args.getAsJsonObject("player_response");
 
-        if (!playerResponse.containsKey("streamingData") && !playerResponse.containsKey("videoDetails")) {
+        if (!playerResponse.has("streamingData") && !playerResponse.has("videoDetails")) {
             YoutubeException e = new YoutubeException.BadPageException("streamingData and videoDetails not found");
             if (callback != null) {
                 callback.onError(e);
@@ -169,7 +175,7 @@ public class ParserImpl implements Parser {
                 }
                 throw e;
             }
-            JSONObject context = playerConfig.getJSONObject("args").getJSONObject("player_response").getJSONObject("responseContext");
+            JsonObject context = playerConfig.getAsJsonObject("args").getAsJsonObject("player_response").getAsJsonObject("responseContext");
             String clientVersion = extractor.extractClientVersionFromContext(context);
             List<Format> formats;
             try {
@@ -187,34 +193,34 @@ public class ParserImpl implements Parser {
         }
     }
 
-    private VideoDetails parseVideoDetails(String videoId, JSONObject playerResponse) {
-        if (!playerResponse.containsKey("videoDetails")) {
+    private VideoDetails parseVideoDetails(String videoId, JsonObject playerResponse) {
+        if (!playerResponse.has("videoDetails")) {
             return new VideoDetails(videoId);
         }
 
-        JSONObject videoDetails = playerResponse.getJSONObject("videoDetails");
+        JsonObject videoDetails = playerResponse.getAsJsonObject("videoDetails");
         String liveHLSUrl = null;
-        if (videoDetails.getBooleanValue("isLive")) {
-            if (playerResponse.containsKey("streamingData")) {
-                liveHLSUrl = playerResponse.getJSONObject("streamingData").getString("hlsManifestUrl");
+        if (videoDetails.getAsJsonPrimitive("isLive").getAsBoolean()) {
+            if (playerResponse.has("streamingData")) {
+                liveHLSUrl = playerResponse.getAsJsonObject("streamingData").getAsJsonPrimitive("hlsManifestUrl").getAsString();
             }
         }
         return new VideoDetails(videoDetails, liveHLSUrl);
     }
 
-    private List<Format> parseFormats(JSONObject playerResponse, String jsUrl, String clientVersion) throws YoutubeException {
-        if (!playerResponse.containsKey("streamingData")) {
+    private List<Format> parseFormats(JsonObject playerResponse, String jsUrl, String clientVersion) throws YoutubeException {
+        if (!playerResponse.getAsJsonObject().has("streamingData")) {
             throw new YoutubeException.BadPageException("streamingData not found");
         }
 
-        JSONObject streamingData = playerResponse.getJSONObject("streamingData");
-        JSONArray jsonFormats = new JSONArray();
-        if (streamingData.containsKey("formats")) {
-            jsonFormats.addAll(streamingData.getJSONArray("formats"));
+        JsonObject streamingData = playerResponse.getAsJsonObject("streamingData");
+        JsonArray jsonFormats = new JsonArray();
+        if (streamingData.has("formats")) {
+            jsonFormats.addAll(streamingData.getAsJsonArray("formats"));
         }
-        JSONArray jsonAdaptiveFormats = new JSONArray();
-        if (streamingData.containsKey("adaptiveFormats")) {
-            jsonAdaptiveFormats.addAll(streamingData.getJSONArray("adaptiveFormats"));
+        JsonArray jsonAdaptiveFormats = new JsonArray();
+        if (streamingData.has("adaptiveFormats")) {
+            jsonAdaptiveFormats.addAll(streamingData.getAsJsonArray("adaptiveFormats"));
         }
 
         List<Format> formats = new ArrayList<>(jsonFormats.size() + jsonAdaptiveFormats.size());
@@ -223,13 +229,13 @@ public class ParserImpl implements Parser {
         return formats;
     }
 
-    private void populateFormats(List<Format> formats, JSONArray jsonFormats, String jsUrl, boolean isAdaptive, String clientVersion) throws YoutubeException.CipherException {
+    private void populateFormats(List<Format> formats, JsonArray jsonFormats, String jsUrl, boolean isAdaptive, String clientVersion) throws YoutubeException.CipherException {
         for (int i = 0; i < jsonFormats.size(); i++) {
-            JSONObject json = jsonFormats.getJSONObject(i);
-            if ("FORMAT_STREAM_TYPE_OTF".equals(json.getString("type")))
+            JsonObject json = jsonFormats.get(i).getAsJsonObject();
+            if ("FORMAT_STREAM_TYPE_OTF".equals(json.getAsJsonPrimitive("type").getAsString()))
                 continue; // unsupported otf formats which cause 404 not found
 
-            int itagValue = json.getIntValue("itag");
+            int itagValue = json.getAsJsonPrimitive("itag").getAsInt();
             Itag itag;
             try {
                 itag = Itag.valueOf("i" + itagValue);
@@ -251,18 +257,18 @@ public class ParserImpl implements Parser {
         }
     }
 
-    private Format parseFormat(JSONObject json, String jsUrl, Itag itag, boolean isAdaptive, String clientVersion) throws YoutubeException {
-        if (json.containsKey("signatureCipher")) {
-            JSONObject jsonCipher = new JSONObject();
-            String[] cipherData = json.getString("signatureCipher").replace("\\u0026", "&").split("&");
+    private Format parseFormat(JsonObject json, String jsUrl, Itag itag, boolean isAdaptive, String clientVersion) throws YoutubeException {
+        if (json.has("signatureCipher")) {
+            JsonObject jsonCipher = new JsonObject();
+            String[] cipherData = json.getAsJsonPrimitive("signatureCipher").getAsString().replace("\\u0026", "&").split("&");
             for (String s : cipherData) {
                 String[] keyValue = s.split("=");
-                jsonCipher.put(keyValue[0], keyValue[1]);
+                jsonCipher.addProperty(keyValue[0], keyValue[1]);
             }
-            if (!jsonCipher.containsKey("url")) {
+            if (!jsonCipher.has("url")) {
                 throw new YoutubeException.BadPageException("Could not found url in cipher data");
             }
-            String urlWithSig = jsonCipher.getString("url");
+            String urlWithSig = jsonCipher.getAsJsonPrimitive("url").getAsString();
             try {
                 urlWithSig = URLDecoder.decode(urlWithSig, "UTF-8");
             } catch (UnsupportedEncodingException e) {
@@ -270,10 +276,10 @@ public class ParserImpl implements Parser {
             }
 
             if (urlWithSig.contains("signature")
-                    || (!jsonCipher.containsKey("s") && (urlWithSig.contains("&sig=") || urlWithSig.contains("&lsig=")))) {
+                    || (!jsonCipher.has("s") && (urlWithSig.contains("&sig=") || urlWithSig.contains("&lsig=")))) {
                 // do nothing, this is pre-signed videos with signature
             } else if (jsUrl != null) {
-                String s = jsonCipher.getString("s");
+                String s = jsonCipher.getAsJsonPrimitive("s").getAsString();
                 try {
                     s = URLDecoder.decode(s, "UTF-8");
                 } catch (UnsupportedEncodingException e) {
@@ -283,14 +289,14 @@ public class ParserImpl implements Parser {
 
                 String signature = cipher.getSignature(s);
                 String decipheredUrl = urlWithSig + "&sig=" + signature;
-                json.put("url", decipheredUrl);
+                json.addProperty("url", decipheredUrl);
             } else {
                 throw new YoutubeException.BadPageException("deciphering is required but no js url");
             }
         }
 
-        boolean hasVideo = itag.isVideo() || json.containsKey("size") || json.containsKey("width");
-        boolean hasAudio = itag.isAudio() || json.containsKey("audioQuality");
+        boolean hasVideo = itag.isVideo() || json.has("size") || json.has("width");
+        boolean hasAudio = itag.isAudio() || json.has("audioQuality");
 
         if (hasVideo && hasAudio)
             return new VideoWithAudioFormat(json, isAdaptive, clientVersion);
@@ -299,28 +305,28 @@ public class ParserImpl implements Parser {
         return new AudioFormat(json, isAdaptive, clientVersion);
     }
 
-    private List<SubtitlesInfo> parseCaptions(JSONObject playerResponse) {
-        if (!playerResponse.containsKey("captions")) {
+    private List<SubtitlesInfo> parseCaptions(JsonObject playerResponse) {
+        if (!playerResponse.has("captions")) {
             return Collections.emptyList();
         }
-        JSONObject captions = playerResponse.getJSONObject("captions");
+        JsonObject captions = playerResponse.getAsJsonObject("captions");
 
-        JSONObject playerCaptionsTracklistRenderer = captions.getJSONObject("playerCaptionsTracklistRenderer");
+        JsonObject playerCaptionsTracklistRenderer = captions.getAsJsonObject("playerCaptionsTracklistRenderer");
         if (playerCaptionsTracklistRenderer == null || playerCaptionsTracklistRenderer.isEmpty()) {
             return Collections.emptyList();
         }
 
-        JSONArray captionsArray = playerCaptionsTracklistRenderer.getJSONArray("captionTracks");
+        JsonArray captionsArray = playerCaptionsTracklistRenderer.getAsJsonArray("captionTracks");
         if (captionsArray == null || captionsArray.isEmpty()) {
             return Collections.emptyList();
         }
 
         List<SubtitlesInfo> subtitlesInfo = new ArrayList<>();
         for (int i = 0; i < captionsArray.size(); i++) {
-            JSONObject subtitleInfo = captionsArray.getJSONObject(i);
-            String language = subtitleInfo.getString("languageCode");
-            String url = subtitleInfo.getString("baseUrl");
-            String vssId = subtitleInfo.getString("vssId");
+            JsonObject subtitleInfo = captionsArray.get(i).getAsJsonObject();
+            String language = subtitleInfo.getAsJsonPrimitive("languageCode").getAsString();
+            String url = subtitleInfo.getAsJsonPrimitive("baseUrl").getAsString();
+            String vssId = subtitleInfo.getAsJsonPrimitive("vssId").getAsString();
 
             if (language != null && url != null && vssId != null) {
                 boolean isAutoGenerated = vssId.startsWith("a.");
@@ -359,7 +365,7 @@ public class ParserImpl implements Parser {
         }
         String html = response.data();
 
-        JSONObject initialData;
+        JsonObject initialData;
         try {
             initialData = extractor.extractInitialDataFromHtml(html);
         } catch (YoutubeException e) {
@@ -369,7 +375,7 @@ public class ParserImpl implements Parser {
             throw e;
         }
 
-        if (!initialData.containsKey("metadata")) {
+        if (!initialData.has("metadata")) {
             throw new YoutubeException.BadPageException("Invalid initial data json");
         }
 
@@ -387,48 +393,48 @@ public class ParserImpl implements Parser {
         return new PlaylistInfo(playlistDetails, videos);
     }
 
-    private PlaylistDetails parsePlaylistDetails(String playlistId, JSONObject initialData) {
-        String title = initialData.getJSONObject("metadata")
-                .getJSONObject("playlistMetadataRenderer")
-                .getString("title");
-        JSONArray sideBarItems = initialData.getJSONObject("sidebar").getJSONObject("playlistSidebarRenderer").getJSONArray("items");
+    private PlaylistDetails parsePlaylistDetails(String playlistId, JsonObject initialData) {
+        String title = initialData.getAsJsonObject("metadata")
+                .getAsJsonObject("playlistMetadataRenderer")
+                .getAsJsonPrimitive("title").getAsString();
+        JsonArray sideBarItems = initialData.getAsJsonObject("sidebar").getAsJsonObject("playlistSidebarRenderer").getAsJsonArray("items");
         String author = null;
         try {
             // try to retrieve author, some playlists may have no author
-            author = sideBarItems.getJSONObject(1)
-                    .getJSONObject("playlistSidebarSecondaryInfoRenderer")
-                    .getJSONObject("videoOwner")
-                    .getJSONObject("videoOwnerRenderer")
-                    .getJSONObject("title")
-                    .getJSONArray("runs")
-                    .getJSONObject(0)
-                    .getString("text");
+            author = sideBarItems.get(1).getAsJsonObject()
+                    .getAsJsonObject("playlistSidebarSecondaryInfoRenderer")
+                    .getAsJsonObject("videoOwner")
+                    .getAsJsonObject("videoOwnerRenderer")
+                    .getAsJsonObject("title")
+                    .getAsJsonArray("runs")
+                    .get(0).getAsJsonObject()
+                    .getAsJsonPrimitive("text").getAsString();
         } catch (Exception ignored) {
         }
-        JSONArray stats = sideBarItems.getJSONObject(0)
-                .getJSONObject("playlistSidebarPrimaryInfoRenderer")
-                .getJSONArray("stats");
-        int videoCount = extractor.extractIntegerFromText(stats.getJSONObject(0).getJSONArray("runs").getJSONObject(0).getString("text"));
-        long viewCount = extractor.extractLongFromText(stats.getJSONObject(1).getString("simpleText"));
+        JsonArray stats = sideBarItems.get(0).getAsJsonObject()
+                .getAsJsonObject("playlistSidebarPrimaryInfoRenderer")
+                .getAsJsonArray("stats");
+        int videoCount = extractor.extractIntegerFromText(stats.get(0).getAsJsonObject().getAsJsonArray("runs").get(0).getAsJsonObject().getAsJsonPrimitive("text").getAsString());
+        long viewCount = extractor.extractLongFromText(stats.get(1).getAsJsonObject().getAsJsonPrimitive("simpleText").getAsString());
 
         return new PlaylistDetails(playlistId, title, author, videoCount, viewCount);
     }
 
-    private List<PlaylistVideoDetails> parsePlaylistVideos(JSONObject initialData, int videoCount) throws YoutubeException {
-        JSONObject content;
+    private List<PlaylistVideoDetails> parsePlaylistVideos(JsonObject initialData, int videoCount) throws YoutubeException {
+        JsonObject content;
 
         try {
-            content = initialData.getJSONObject("contents")
-                    .getJSONObject("twoColumnBrowseResultsRenderer")
-                    .getJSONArray("tabs").getJSONObject(0)
-                    .getJSONObject("tabRenderer")
-                    .getJSONObject("content")
-                    .getJSONObject("sectionListRenderer")
-                    .getJSONArray("contents").getJSONObject(0)
-                    .getJSONObject("itemSectionRenderer")
-                    .getJSONArray("contents").getJSONObject(0)
-                    .getJSONObject("playlistVideoListRenderer");
-        } catch (NullPointerException e) {
+            content = initialData.getAsJsonObject("contents")
+                    .getAsJsonObject("twoColumnBrowseResultsRenderer")
+                    .getAsJsonArray("tabs").get(0).getAsJsonObject()
+                    .getAsJsonObject("tabRenderer")
+                    .getAsJsonObject("content")
+                    .getAsJsonObject("sectionListRenderer")
+                    .getAsJsonArray("contents").get(0).getAsJsonObject()
+                    .getAsJsonObject("itemSectionRenderer")
+                    .getAsJsonArray("contents").get(0).getAsJsonObject()
+                    .getAsJsonObject("playlistVideoListRenderer");
+        } catch (NullPointerException | ClassCastException e) {
             throw new YoutubeException.BadPageException("Playlist initial data not found");
         }
 
@@ -438,25 +444,25 @@ public class ParserImpl implements Parser {
         } else {
             videos = new LinkedList<>();
         }
-        JSONObject context = initialData.getJSONObject("responseContext");
+        JsonObject context = initialData.getAsJsonObject("responseContext");
         String clientVersion = extractor.extractClientVersionFromContext(context);
 
         populatePlaylist(content, videos, clientVersion);
         return videos;
     }
 
-    private void populatePlaylist(JSONObject content, List<PlaylistVideoDetails> videos, String clientVersion) throws YoutubeException {
-        JSONArray contents;
-        if (content.containsKey("contents")) { // parse first items (up to 100)
-            contents = content.getJSONArray("contents");
-        } else if (content.containsKey("continuationItems")) { // parse continuationItems
-            contents = content.getJSONArray("continuationItems");
-        } else if (content.containsKey("continuations")) { // load continuation
-            JSONObject nextContinuationData = content.getJSONArray("continuations")
-                    .getJSONObject(0)
-                    .getJSONObject("nextContinuationData");
-            String continuation = nextContinuationData.getString("continuation");
-            String ctp = nextContinuationData.getString("clickTrackingParams");
+    private void populatePlaylist(JsonObject content, List<PlaylistVideoDetails> videos, String clientVersion) throws YoutubeException {
+        JsonArray contents;
+        if (content.has("contents")) { // parse first items (up to 100)
+            contents = content.getAsJsonArray("contents");
+        } else if (content.has("continuationItems")) { // parse continuationItems
+            contents = content.getAsJsonArray("continuationItems");
+        } else if (content.has("continuations")) { // load continuation
+            JsonObject nextContinuationData = content.getAsJsonArray("continuations")
+                    .get(0).getAsJsonObject()
+                    .getAsJsonObject("nextContinuationData");
+            String continuation = nextContinuationData.getAsJsonPrimitive("continuation").getAsString();
+            String ctp = nextContinuationData.getAsJsonPrimitive("clickTrackingParams").getAsString();
             loadPlaylistContinuation(continuation, ctp, videos, clientVersion);
             return;
         } else { // nothing found
@@ -464,15 +470,15 @@ public class ParserImpl implements Parser {
         }
 
         for (int i = 0; i < contents.size(); i++) {
-            JSONObject contentsItem = contents.getJSONObject(i);
-            if (contentsItem.containsKey("playlistVideoRenderer")) {
-                videos.add(new PlaylistVideoDetails(contentsItem.getJSONObject("playlistVideoRenderer")));
+            JsonObject contentsItem = contents.get(i).getAsJsonObject();
+            if (contentsItem.has("playlistVideoRenderer")) {
+                videos.add(new PlaylistVideoDetails(contentsItem.getAsJsonObject("playlistVideoRenderer")));
             } else {
-                if (contentsItem.containsKey("continuationItemRenderer")) {
-                    JSONObject continuationEndpoint = contentsItem.getJSONObject("continuationItemRenderer")
-                            .getJSONObject("continuationEndpoint");
-                    String continuation = continuationEndpoint.getJSONObject("continuationCommand").getString("token");
-                    String ctp = continuationEndpoint.getString("clickTrackingParams");
+                if (contentsItem.has("continuationItemRenderer")) {
+                    JsonObject continuationEndpoint = contentsItem.getAsJsonObject("continuationItemRenderer")
+                            .getAsJsonObject("continuationEndpoint");
+                    String continuation = continuationEndpoint.getAsJsonObject("continuationCommand").getAsJsonPrimitive("token").getAsString();
+                    String ctp = continuationEndpoint.getAsJsonPrimitive("clickTrackingParams").getAsString();
                     loadPlaylistContinuation(continuation, ctp, videos, clientVersion);
                 }
             }
@@ -480,19 +486,24 @@ public class ParserImpl implements Parser {
     }
 
     private void loadPlaylistContinuation(String continuation, String ctp, List<PlaylistVideoDetails> videos, String clientVersion) throws YoutubeException {
-        JSONObject content;
+        JsonObject content;
         String url = "https://www.youtube.com/youtubei/v1/browse?key=" + ANDROID_APIKEY;
 
-        JSONObject body = new JSONObject()
-                .fluentPut("context", new JSONObject()
-                        .fluentPut("client", new JSONObject()
-                                .fluentPut("clientName", "WEB")
-                                .fluentPut("clientVersion", "2.20201021.03.00")))
-                .fluentPut("continuation", continuation)
-                .fluentPut("clickTracking", new JSONObject()
-                        .fluentPut("clickTrackingParams", ctp));
+        JsonObject context = new JsonObject();
+        JsonObject client = new JsonObject();
+        client.addProperty("clientName", "WEB");
+        client.addProperty("clientVersion", "2.20201021.03.00");
+        context.add("client", client);
 
-        RequestWebpage request = new RequestWebpage(url, "POST", body.toJSONString())
+        JsonObject clickTracking = new JsonObject();
+        clickTracking.addProperty("clickTrackingParams", ctp);
+
+        JsonObject body = new JsonObject();
+        body.add("context", context);
+        body.addProperty("continuation", continuation);
+        body.add("clickTracking", clickTracking);
+
+        RequestWebpage request = new RequestWebpage(url, "POST", body.toString())
                 .header("X-YouTube-Client-Name", "1")
                 .header("X-YouTube-Client-Version", clientVersion)
                 .header("Content-Type", "application/json");
@@ -504,16 +515,16 @@ public class ParserImpl implements Parser {
         String html = response.data();
 
         try {
-            JSONObject jsonResponse = JSON.parseObject(html);
+            JsonObject jsonResponse = JsonParser.parseString(html).getAsJsonObject();
 
-            if (jsonResponse.containsKey("continuationContents")) {
+            if (jsonResponse.has("continuationContents")) {
                 content = jsonResponse
-                        .getJSONObject("continuationContents")
-                        .getJSONObject("playlistVideoListContinuation");
+                        .getAsJsonObject("continuationContents")
+                        .getAsJsonObject("playlistVideoListContinuation");
             } else {
-                content = jsonResponse.getJSONArray("onResponseReceivedActions")
-                        .getJSONObject(0)
-                        .getJSONObject("appendContinuationItemsAction");
+                content = jsonResponse.getAsJsonArray("onResponseReceivedActions")
+                        .get(0).getAsJsonObject()
+                        .getAsJsonObject("appendContinuationItemsAction");
             }
             populatePlaylist(content, videos, clientVersion);
         } catch (YoutubeException e) {
@@ -709,20 +720,20 @@ public class ParserImpl implements Parser {
 
         String html = response.data();
         
-        JSONObject initialData = extractor.extractInitialDataFromHtml(html);
-        JSONArray rootContents;
+        JsonObject initialData = extractor.extractInitialDataFromHtml(html);
+        JsonArray rootContents;
         try {
-            rootContents = initialData.getJSONObject("contents")
-                    .getJSONObject("twoColumnSearchResultsRenderer")
-                    .getJSONObject("primaryContents")
-                    .getJSONObject("sectionListRenderer")
-                    .getJSONArray("contents");
+            rootContents = initialData.getAsJsonObject("contents")
+                    .getAsJsonObject("twoColumnSearchResultsRenderer")
+                    .getAsJsonObject("primaryContents")
+                    .getAsJsonObject("sectionListRenderer")
+                    .getAsJsonArray("contents");
         } catch (NullPointerException e) {
             throw new YoutubeException.BadPageException("Search result root contents not found");
         }
         
-        long estimatedCount = extractor.extractLongFromText(initialData.getString("estimatedResults"));
-        String clientVersion = extractor.extractClientVersionFromContext(initialData.getJSONObject("responseContext"));
+        long estimatedCount = extractor.extractLongFromText(initialData.getAsJsonPrimitive("estimatedResults").getAsString());
+        String clientVersion = extractor.extractClientVersionFromContext(initialData.getAsJsonObject("responseContext"));
         SearchContinuation continuation = getSearchContinuation(rootContents, clientVersion);
         return parseSearchResult(estimatedCount, rootContents, continuation);
     }
@@ -730,16 +741,22 @@ public class ParserImpl implements Parser {
     private SearchResult parseSearchContinuation(SearchContinuation continuation, YoutubeCallback<SearchResult> callback) throws YoutubeException {
         String url = "https://www.youtube.com/youtubei/v1/search?key=" + ANDROID_APIKEY + "&prettyPrint=false";
 
-        JSONObject body = new JSONObject()
-                .fluentPut("context", new JSONObject()
-                        .fluentPut("client", new JSONObject()
-                                .fluentPut("clientName", "WEB")
-                                .fluentPut("clientVersion", "2.20201021.03.00")))
-                .fluentPut("continuation", continuation.token())
-                .fluentPut("clickTracking", new JSONObject()
-                        .fluentPut("clickTrackingParams", continuation.clickTrackingParameters()));
+        JsonObject context = new JsonObject();
+        JsonObject client = new JsonObject();
+        client.addProperty("clientName", "WEB");
+        client.addProperty("clientVersion", "2.20201021.03.00");
+        context.add("client", client);
 
-        RequestWebpage request = new RequestWebpage(url, "POST", body.toJSONString())
+        JsonObject clickTracking = new JsonObject();
+        clickTracking.addProperty("clickTrackingParams", continuation.clickTrackingParameters());
+
+
+        JsonObject body = new JsonObject();
+        body.add("context", context);
+        body.addProperty("continuation", continuation.token());
+        body.add("clickTracking", clickTracking);
+
+        RequestWebpage request = new RequestWebpage(url, "POST", body.toString())
                 .header("X-YouTube-Client-Name", "1")
                 .header("X-YouTube-Client-Version", continuation.clientVersion())
                 .header("Content-Type", "application/json");
@@ -754,15 +771,15 @@ public class ParserImpl implements Parser {
         }
         String html = response.data();
 
-        JSONObject jsonResponse;
-        JSONArray rootContents;
+        JsonObject jsonResponse;
+        JsonArray rootContents;
         try {
-            jsonResponse = JSON.parseObject(html);
-            if (jsonResponse.containsKey("onResponseReceivedCommands")) {
-                rootContents = jsonResponse.getJSONArray("onResponseReceivedCommands")
-                        .getJSONObject(0)
-                        .getJSONObject("appendContinuationItemsAction")
-                        .getJSONArray("continuationItems");
+            jsonResponse = JsonParser.parseString(html).getAsJsonObject();
+            if (jsonResponse.has("onResponseReceivedCommands")) {
+                rootContents = jsonResponse.getAsJsonArray("onResponseReceivedCommands")
+                        .get(0).getAsJsonObject()
+                        .getAsJsonObject("appendContinuationItemsAction")
+                        .getAsJsonArray("continuationItems");
             } else {
                 throw new YoutubeException.BadPageException("Could not find continuation data");
             }
@@ -772,32 +789,32 @@ public class ParserImpl implements Parser {
             throw new YoutubeException.BadPageException("Could not parse search continuation json");
         }
         
-        long estimatedResults = extractor.extractLongFromText(jsonResponse.getString("estimatedResults"));
+        long estimatedResults = extractor.extractLongFromText(jsonResponse.getAsJsonPrimitive("estimatedResults").getAsString());
         SearchContinuation nextContinuation = getSearchContinuation(rootContents, continuation.clientVersion());
         return parseSearchResult(estimatedResults, rootContents, nextContinuation);
     }
 
-    private SearchContinuation getSearchContinuation(JSONArray rootContents, String clientVersion) {
+    private SearchContinuation getSearchContinuation(JsonArray rootContents, String clientVersion) {
         if (rootContents.size() > 1) {
-            if (rootContents.getJSONObject(1).containsKey("continuationItemRenderer")) {
-                JSONObject endPoint = rootContents.getJSONObject(1)
-                        .getJSONObject("continuationItemRenderer")
-                        .getJSONObject("continuationEndpoint");
-                String token = endPoint.getJSONObject("continuationCommand").getString("token");
-                String ctp = endPoint.getString("clickTrackingParams");
+            if (rootContents.get(1).getAsJsonObject().has("continuationItemRenderer")) {
+                JsonObject endPoint = rootContents.get(1).getAsJsonObject()
+                        .getAsJsonObject("continuationItemRenderer")
+                        .getAsJsonObject("continuationEndpoint");
+                String token = endPoint.getAsJsonObject("continuationCommand").getAsJsonPrimitive("token").getAsString();
+                String ctp = endPoint.getAsJsonPrimitive("clickTrackingParams").getAsString();
                 return new SearchContinuation(token, clientVersion, ctp);
             }
         }
         return null;
     }
 
-    private SearchResult parseSearchResult(long estimatedResults, JSONArray rootContents, SearchContinuation continuation) throws BadPageException {
-        JSONArray contents;
+    private SearchResult parseSearchResult(long estimatedResults, JsonArray rootContents, SearchContinuation continuation) throws BadPageException {
+        JsonArray contents;
 
         try {
-            contents = rootContents.getJSONObject(0)
-                    .getJSONObject("itemSectionRenderer")
-                    .getJSONArray("contents");
+            contents = rootContents.get(0).getAsJsonObject()
+                    .getAsJsonObject("itemSectionRenderer")
+                    .getAsJsonArray("contents");
         } catch (NullPointerException e) {
             throw new YoutubeException.BadPageException("Search result contents not found");
         }
@@ -805,7 +822,7 @@ public class ParserImpl implements Parser {
         List<SearchResultItem> items = new ArrayList<>(contents.size());
         Map<QueryElementType, QueryElement> queryElements = new HashMap<>();
         for (int i = 0; i < contents.size(); i++) {
-            final SearchResultElement element = parseSearchResultElement(contents.getJSONObject(i));
+            final SearchResultElement element = parseSearchResultElement(contents.get(i).getAsJsonObject());
             if (element != null) {
                 if (element instanceof SearchResultItem) {
                     items.add((SearchResultItem) element);
@@ -822,9 +839,9 @@ public class ParserImpl implements Parser {
         }
     }
 
-    private static SearchResultElement parseSearchResultElement(JSONObject jsonItem) {
+    private static SearchResultElement parseSearchResultElement(JsonObject jsonItem) {
         String rendererKey = jsonItem.keySet().iterator().next();
-        JSONObject jsonRenderer = jsonItem.getJSONObject(rendererKey);
+        JsonObject jsonRenderer = jsonItem.getAsJsonObject(rendererKey);
         switch (rendererKey) {
         case "videoRenderer":
             return new SearchResultVideoDetails(jsonRenderer, false);

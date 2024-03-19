@@ -1,26 +1,26 @@
 package com.github.kiulian.downloader.model.search;
 
-import java.util.LinkedList;
-
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.github.kiulian.downloader.model.Utils;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
+import java.util.LinkedList;
 
 public class SearchResultPlaylistDetails extends AbstractSearchResultList {
 
     private final String playlistId;
     private final int videoCount;
 
-    public SearchResultPlaylistDetails(JSONObject json) {
+    public SearchResultPlaylistDetails(JsonObject json) {
         super(json);
-        playlistId = json.getString("playlistId");
-        JSONArray thumbnailGroups = json.getJSONArray("thumbnails");
+        playlistId = json.getAsJsonPrimitive("playlistId").getAsString();
+        JsonArray thumbnailGroups = json.getAsJsonArray("thumbnails");
         thumbnails = new LinkedList<>();
         for (int i = 0; i < thumbnailGroups.size(); i++) {
-            thumbnails.addAll(Utils.parseThumbnails(thumbnailGroups.getJSONObject(i)));
+            thumbnails.addAll(Utils.parseThumbnails(thumbnailGroups.get(i).getAsJsonObject()));
         }
-        if (json.containsKey("videoCount")) {
-            videoCount = Integer.parseInt(json.getString("videoCount"));
+        if (json.has("videoCount")) {
+            videoCount = Integer.parseInt(json.getAsJsonPrimitive("videoCount").getAsString());
         } else {
             videoCount = -1;
         }

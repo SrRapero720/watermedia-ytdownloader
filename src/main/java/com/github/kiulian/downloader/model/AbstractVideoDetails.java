@@ -1,9 +1,9 @@
 package com.github.kiulian.downloader.model;
 
 
-import java.util.List;
+import com.google.gson.JsonObject;
 
-import com.alibaba.fastjson.JSONObject;
+import java.util.List;
 
 public abstract class AbstractVideoDetails {
 
@@ -23,12 +23,12 @@ public abstract class AbstractVideoDetails {
     public AbstractVideoDetails() {
     }
 
-    public AbstractVideoDetails(JSONObject json) {
-        videoId = json.getString("videoId");
-        if (json.containsKey("lengthSeconds")) {
-            lengthSeconds = json.getIntValue("lengthSeconds");
+    public AbstractVideoDetails(JsonObject json) {
+        videoId = json.getAsJsonPrimitive("videoId").getAsString();
+        if (json.has("lengthSeconds")) {
+            lengthSeconds = json.getAsJsonPrimitive("lengthSeconds").getAsInt();
         }
-        thumbnails = Utils.parseThumbnails(json.getJSONObject("thumbnail"));
+        thumbnails = Utils.parseThumbnails(json.getAsJsonObject("thumbnail"));
     }
 
     public String videoId() {

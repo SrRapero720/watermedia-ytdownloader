@@ -1,16 +1,16 @@
 package com.github.kiulian.downloader.extractor;
 
-
-
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.github.kiulian.downloader.YoutubeException;
 import com.github.kiulian.downloader.downloader.Downloader;
 import com.github.kiulian.downloader.downloader.request.RequestWebpage;
 import com.github.kiulian.downloader.downloader.response.Response;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,7 +39,7 @@ public class ExtractorImpl implements Extractor {
     }
 
     @Override
-    public JSONObject extractInitialDataFromHtml(String html) throws YoutubeException {
+    public JsonObject extractInitialDataFromHtml(String html) throws YoutubeException {
         String ytInitialData = null;
 
         for (Pattern pattern : YT_INITIAL_DATA_PATTERNS) {
@@ -52,14 +52,14 @@ public class ExtractorImpl implements Extractor {
             throw new YoutubeException.BadPageException("Could not find initial data on web page");
         }
         try {
-            return JSON.parseObject(ytInitialData);
+            return JsonParser.parseString(ytInitialData).getAsJsonObject();
         } catch (Exception e) {
             throw new YoutubeException.BadPageException("Initial data contains invalid json");
         }
     }
 
     @Override
-    public JSONObject extractPlayerConfigFromHtml(String html) throws YoutubeException {
+    public JsonObject extractPlayerConfigFromHtml(String html) throws YoutubeException {
         String ytPlayerConfig = null;
         for (Pattern pattern : YT_PLAYER_CONFIG_PATTERNS) {
             Matcher matcher = pattern.matcher(html);
@@ -74,11 +74,16 @@ public class ExtractorImpl implements Extractor {
         }
 
         try {
-            JSONObject config = JSON.parseObject(ytPlayerConfig);
-            if (config.containsKey("args")) {
+            JsonObject config = JsonParser.parseString(ytPlayerConfig).getAsJsonObject();
+            if (config.has("args")) {
                 return config;
             } else {
-                return new JSONObject().fluentPut("args", new JSONObject().fluentPut("player_response", config));
+                JsonObject playerConfig = new JsonObject();
+                JsonObject args = new JsonObject();
+                args.add("player_response", config);
+                playerConfig.add("args", args);
+
+                return playerConfig;
             }
         } catch (Exception e) {
             throw new YoutubeException.BadPageException("Player config contains invalid json");
@@ -102,10 +107,10 @@ public class ExtractorImpl implements Extractor {
     }
 
     @Override
-    public String extractJsUrlFromConfig(JSONObject config, String videoId) throws YoutubeException {
+    public String extractJsUrlFromConfig(JsonObject config, String videoId) throws YoutubeException {
         String js = null;
-        if (config.containsKey("assets")) {
-            js = config.getJSONObject("assets").getString("js");
+        if (config.has("assets")) {
+            js = config.getAsJsonObject("assets").getAsJsonPrimitive("js").getAsString();
         } else {
             // if assets not found - download embed webpage and search there
             Response<String> response = downloader.downloadWebpage(new RequestWebpage("https://www.youtube.com/embed/" + videoId));
@@ -127,16 +132,16 @@ public class ExtractorImpl implements Extractor {
     }
 
     @Override
-    public String extractClientVersionFromContext(JSONObject context) {
-        JSONArray trackingParams = context.getJSONArray("serviceTrackingParams");
+    public String extractClientVersionFromContext(JsonObject context) {
+        JsonArray trackingParams = context.getAsJsonArray("serviceTrackingParams");
         if (trackingParams == null) {
             return DEFAULT_CLIENT_VERSION;
         }
         for (int ti = 0; ti < trackingParams.size(); ti++) {
-            JSONArray params = trackingParams.getJSONObject(ti).getJSONArray("params");
+            JsonArray params = trackingParams.get(ti).getAsJsonObject().getAsJsonArray("params");
             for (int pi = 0; pi < params.size(); pi++) {
-                if (params.getJSONObject(pi).getString("key").equals("cver")) {
-                    return params.getJSONObject(pi).getString("value");
+                if (params.get(pi).getAsJsonObject().getAsJsonPrimitive("key").getAsString().equals("cver")) {
+                    return params.get(pi).getAsJsonObject().getAsJsonPrimitive("value").getAsString();
                 }
             }
         }

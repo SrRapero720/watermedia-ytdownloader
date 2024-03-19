@@ -1,0 +1,13 @@
+plugins {
+    id 'java'
+    id 'idea'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly project(":lib-tools")
+    compileOnly 'com.google.code.gson:gson:2.10.1'
+}
