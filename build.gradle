@@ -7,7 +7,48 @@ repositories {
     mavenCentral()
 }
 
+test {
+    filter {
+        includeTestsMatching "com.github.*"
+    }
+
+    // discover and execute JUnit Platform-based tests
+    useJUnitPlatform()
+
+    // set a system property for the test JVM(s)
+//    systemProperty 'some.prop', 'value'
+
+    // explicitly include or exclude tests
+    include 'com/github/**'
+
+    // show standard out and standard error of the test JVM(s) on the console
+    testLogging.showStandardStreams = true
+
+    // set heap size for the test JVM(s)
+    minHeapSize = "128M"
+    maxHeapSize = "1G"
+
+    // set JVM arguments for the test JVM(s)
+//    jvmArgs '-XX:MaxPermSize=256m'
+
+    // listen to events in the test execution lifecycle
+    beforeTest { descriptor ->
+        logger.lifecycle("Running test: " + descriptor)
+    }
+
+    // fail the 'test' task on the first test failure
+//    failFast = true
+
+    // listen to standard out and standard error of the test JVM(s)
+    onOutput { descriptor, event ->
+        logger.lifecycle("Test: " + descriptor + " produced standard out/err: " + event.message )
+    }
+}
+
 dependencies {
     compileOnly project(":lib-tools")
     compileOnly 'com.google.code.gson:gson:2.10.1'
+    testImplementation 'com.google.code.gson:gson:2.10.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
+    testImplementation 'org.mockito:mockito-core:2.23.4'
 }

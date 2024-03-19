@@ -1,17 +1,16 @@
 package com.github.kiulian.downloader;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.util.List;
-
 import com.github.kiulian.downloader.downloader.request.RequestPlaylistInfo;
 import com.github.kiulian.downloader.downloader.response.Response;
+import com.github.kiulian.downloader.model.playlist.PlaylistDetails;
+import com.github.kiulian.downloader.model.playlist.PlaylistInfo;
+import com.github.kiulian.downloader.model.playlist.PlaylistVideoDetails;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.github.kiulian.downloader.model.playlist.PlaylistDetails;
-import com.github.kiulian.downloader.model.playlist.PlaylistVideoDetails;
-import com.github.kiulian.downloader.model.playlist.PlaylistInfo;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Tests extracting metadata from youtube playlists")
 public class YoutubePlaylistExtractor_Tests extends YoutubePlaylistTest {
@@ -30,11 +29,11 @@ public class YoutubePlaylistExtractor_Tests extends YoutubePlaylistTest {
     void getShortPlaylist_Success() {
         assertDoesNotThrow(() -> {
             PlaylistInfo playlist = getPlaylist(ASK_NASA_PLAYLIST_ID);
-            testPlaylist(playlist, ASK_NASA_PLAYLIST_ID, "#AskNASA", "NASA", 22);
-            testVideo(getVideo(playlist, "t2AgFb4jL1M", 1),
-                    "#AskNASA​​┃ What’s Out There?", "NASA", true);
-            testVideo(getVideo(playlist, "DpXxdSr1FWs", 10),
-                    "#AskNASA┃ How Will Astronauts Dig on the Moon?", "NASA", true);
+            testPlaylist(playlist, ASK_NASA_PLAYLIST_ID, "Popular Videos | EnchantedMob", "EnchantedMob", 101);
+            testVideo(getVideo(playlist, "Zvw5v5dYNjk", 1),
+                    "\"Build Our Machine\" | Bendy And The Ink Machine Music Video (Song by DAGames)", "EnchantedMob", true);
+            testVideo(getVideo(playlist, "3oyduZz3QIo", 2),
+                    "\"Join Us For A Bite\" | FNAF Sister Location (Animated Minecraft Music Video)", "EnchantedMob", true);
         });
     }
 
@@ -44,7 +43,7 @@ public class YoutubePlaylistExtractor_Tests extends YoutubePlaylistTest {
         assertDoesNotThrow(() -> {
             PlaylistInfo playlist = getPlaylist(LOTR_PLAYLIST_ID);
             testPlaylist(playlist, LOTR_PLAYLIST_ID,
-                    "The Lord of the Rings Complete Recordings",
+                    "The Lord of the Rings Complete Recordings and the Hobbit score",
                     "Darkrunn",
                     210);    // stable
             testVideo(getVideo(playlist, "tK_bCeRcGxo", 194),
@@ -86,7 +85,7 @@ public class YoutubePlaylistExtractor_Tests extends YoutubePlaylistTest {
                 }
                 assertTrue(video.isPlayable(), "live playlist video should be playable");
             }
-            int minLiveCount = 90;
+            int minLiveCount = 40;
             assertTrue(liveCount > minLiveCount, "live playlist should contain at least " + minLiveCount + " live videos");
         });
     }

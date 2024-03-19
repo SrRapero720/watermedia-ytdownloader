@@ -20,10 +20,7 @@ import com.github.kiulian.downloader.model.subtitles.SubtitlesInfo;
 import com.github.kiulian.downloader.model.videos.VideoDetails;
 import com.github.kiulian.downloader.model.videos.VideoInfo;
 import com.github.kiulian.downloader.model.videos.formats.*;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -200,7 +197,8 @@ public class ParserImpl implements Parser {
 
         JsonObject videoDetails = playerResponse.getAsJsonObject("videoDetails");
         String liveHLSUrl = null;
-        if (videoDetails.getAsJsonPrimitive("isLive").getAsBoolean()) {
+        JsonPrimitive isLive = videoDetails.getAsJsonPrimitive("isLive");
+        if (isLive != null && isLive.getAsBoolean()) {
             if (playerResponse.has("streamingData")) {
                 liveHLSUrl = playerResponse.getAsJsonObject("streamingData").getAsJsonPrimitive("hlsManifestUrl").getAsString();
             }
@@ -232,7 +230,8 @@ public class ParserImpl implements Parser {
     private void populateFormats(List<Format> formats, JsonArray jsonFormats, String jsUrl, boolean isAdaptive, String clientVersion) throws YoutubeException.CipherException {
         for (int i = 0; i < jsonFormats.size(); i++) {
             JsonObject json = jsonFormats.get(i).getAsJsonObject();
-            if ("FORMAT_STREAM_TYPE_OTF".equals(json.getAsJsonPrimitive("type").getAsString()))
+            JsonPrimitive type = json.getAsJsonPrimitive("type");
+            if ("FORMAT_STREAM_TYPE_OTF".equals(type != null ? type.getAsString() : ""))
                 continue; // unsupported otf formats which cause 404 not found
 
             int itagValue = json.getAsJsonPrimitive("itag").getAsInt();

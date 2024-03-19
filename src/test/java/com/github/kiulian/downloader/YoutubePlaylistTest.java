@@ -1,14 +1,13 @@
 package com.github.kiulian.downloader;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import com.github.kiulian.downloader.downloader.request.RequestPlaylistInfo;
 import com.github.kiulian.downloader.downloader.response.Response;
+import com.github.kiulian.downloader.model.playlist.PlaylistDetails;
+import com.github.kiulian.downloader.model.playlist.PlaylistInfo;
+import com.github.kiulian.downloader.model.playlist.PlaylistVideoDetails;
 import org.junit.jupiter.api.BeforeEach;
 
-import com.github.kiulian.downloader.model.playlist.PlaylistDetails;
-import com.github.kiulian.downloader.model.playlist.PlaylistVideoDetails;
-import com.github.kiulian.downloader.model.playlist.PlaylistInfo;
+import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class YoutubePlaylistTest extends TestUtils {
 
@@ -19,7 +18,7 @@ public abstract class YoutubePlaylistTest extends TestUtils {
     protected static final String REMOVED_PLAYLIST_ID = "PLC3w7RzH8Yf9Zhgk43XX2w_HEDNptS-Ca";
 
     // AskNASA - 22 videos - stable
-    protected static final String ASK_NASA_PLAYLIST_ID = "PL2aBZuCeDwlRbJhDIkKXilZRz9ur4VVAA";
+    protected static final String ASK_NASA_PLAYLIST_ID = "PLrxSctu8tAz7VHFz0s_z3Bghs5pm93Hic";
 
     // Lord Of The Rings Complete - 210 videos - stable
     protected static final String LOTR_PLAYLIST_ID = "PL924DFB59EB36FA1A";

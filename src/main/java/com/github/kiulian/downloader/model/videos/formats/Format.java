@@ -3,6 +3,7 @@ package com.github.kiulian.downloader.model.videos.formats;
 
 import com.github.kiulian.downloader.model.Extension;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 
 public abstract class Format {
 
@@ -39,7 +40,8 @@ public abstract class Format {
         url = json.getAsJsonPrimitive("url").getAsString().replace("\\u0026", "&");
         mimeType = json.getAsJsonPrimitive("mimeType").getAsString();
         bitrate = json.getAsJsonPrimitive("bitrate").getAsInt();
-        contentLength = json.getAsJsonPrimitive("contentLength").getAsLong();
+        JsonPrimitive contentLenghtLong = json.getAsJsonPrimitive("contentLength");
+        contentLength = contentLenghtLong != null ? contentLenghtLong.getAsLong() : 0L;
         lastModified = json.getAsJsonPrimitive("lastModified").getAsLong();
         approxDurationMs = json.getAsJsonPrimitive("approxDurationMs").getAsLong();
 

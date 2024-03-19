@@ -4,6 +4,7 @@ package com.github.kiulian.downloader.model.videos;
 import com.github.kiulian.downloader.model.AbstractVideoDetails;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +26,8 @@ public class VideoDetails extends AbstractVideoDetails {
         super(json);
         title = json.getAsJsonPrimitive("title").getAsString();
         author = json.getAsJsonPrimitive("author").getAsString();
-        isLive = json.getAsJsonPrimitive("isLive").getAsBoolean();
+        JsonPrimitive isLivePrimitive = json.getAsJsonPrimitive("isLive");
+        isLive = isLivePrimitive != null && isLivePrimitive.getAsBoolean();
 
         keywords = new ArrayList<>();
         List<JsonElement> keywordsJson = json.has("keywords") ? json.getAsJsonArray("keywords").asList() : new ArrayList<>();
@@ -35,7 +37,9 @@ public class VideoDetails extends AbstractVideoDetails {
         }
 
         shortDescription = json.getAsJsonPrimitive("shortDescription").getAsString();
-        averageRating = json.getAsJsonPrimitive("averageRating").getAsInt();
+
+        JsonPrimitive avgRating = json.getAsJsonPrimitive("averageRating");
+        averageRating = avgRating != null ? avgRating.getAsInt() : 0;
         viewCount = json.getAsJsonPrimitive("viewCount").getAsLong();
         isLiveContent = json.getAsJsonPrimitive("isLiveContent").getAsBoolean();
         liveUrl = liveHLSUrl;

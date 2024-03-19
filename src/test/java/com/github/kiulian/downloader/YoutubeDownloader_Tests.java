@@ -1,15 +1,15 @@
 package com.github.kiulian.downloader;
 
-import com.alibaba.fastjson.JSONObject;
 import com.github.kiulian.downloader.downloader.YoutubeCallback;
 import com.github.kiulian.downloader.downloader.YoutubeProgressCallback;
 import com.github.kiulian.downloader.downloader.request.*;
 import com.github.kiulian.downloader.downloader.response.Response;
 import com.github.kiulian.downloader.downloader.response.ResponseStatus;
 import com.github.kiulian.downloader.model.Extension;
+import com.github.kiulian.downloader.model.subtitles.SubtitlesInfo;
 import com.github.kiulian.downloader.model.videos.VideoInfo;
 import com.github.kiulian.downloader.model.videos.formats.Format;
-import com.github.kiulian.downloader.model.subtitles.SubtitlesInfo;
+import com.google.gson.JsonParser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -269,7 +269,7 @@ class YoutubeDownloader_Tests {
                 String subtitles = responseSubtitle.data();
                 assertFalse(subtitles.isEmpty(), "subtitles should not be empty");
                 assertDoesNotThrow(() -> {
-                    JSONObject.parseObject(subtitles);
+                    JsonParser.parseString(subtitles);
                 }, "subtitles should be formatted to json");
             }
         }, "download formatted subtitles should work");
@@ -284,7 +284,7 @@ class YoutubeDownloader_Tests {
                 String subtitles = responseSubtitle.data();
                 assertFalse(subtitles.isEmpty(), "subtitles should not be empty");
                 assertDoesNotThrow(() -> {
-                    JSONObject.parseObject(subtitles);
+                    JsonParser.parseString(subtitles);
                 }, "subtitles should be formatted to json");
             }
         }, "download formatted and translated subtitles should work");
@@ -310,7 +310,7 @@ class YoutubeDownloader_Tests {
                 String subtitle = responseSubtitle.data();
                 assertFalse(subtitle.isEmpty(), "subtitles should not be empty");
                 assertDoesNotThrow(() -> {
-                    JSONObject.parseObject(subtitle);
+                    JsonParser.parseString(subtitle);
                 }, "subtitles should be formatted to json");
             }
         });

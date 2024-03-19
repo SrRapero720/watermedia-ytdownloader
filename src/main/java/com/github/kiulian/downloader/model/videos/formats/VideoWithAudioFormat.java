@@ -3,6 +3,7 @@ package com.github.kiulian.downloader.model.videos.formats;
 
 import com.github.kiulian.downloader.model.videos.quality.AudioQuality;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 
 public class VideoWithAudioFormat extends VideoFormat {
 
@@ -12,8 +13,11 @@ public class VideoWithAudioFormat extends VideoFormat {
 
     public VideoWithAudioFormat(JsonObject json, boolean isAdaptive, String clientVersion) {
         super(json, isAdaptive, clientVersion);
-        audioSampleRate = json.getAsJsonPrimitive("audioSampleRate").getAsInt();
-        averageBitrate = json.getAsJsonPrimitive("averageBitrate").getAsInt();
+        JsonPrimitive audioSampleRateJson = json.getAsJsonPrimitive("audioSampleRate");
+        JsonPrimitive averageBitrateJson = json.getAsJsonPrimitive("averageBitrate");
+
+        audioSampleRate = audioSampleRateJson != null ? audioSampleRateJson.getAsInt() : 0;
+        averageBitrate = averageBitrateJson != null ? averageBitrateJson.getAsInt() : 0;
 
         AudioQuality audioQuality = null;
         if (json.has("audioQuality")) {
