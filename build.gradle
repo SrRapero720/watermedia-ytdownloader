@@ -37,7 +37,8 @@ test {
     }
 
     // fail the 'test' task on the first test failure
-//    failFast = true
+    failFast = true
+    dryRun = true
 
     // listen to standard out and standard error of the test JVM(s)
     onOutput { descriptor, event ->
