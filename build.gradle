@@ -3,6 +3,12 @@ plugins {
     id 'idea'
 }
 
+java {
+    /* SOURCE AND TARGET JAVA VERSION */
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
 repositories {
     mavenCentral()
 }
@@ -47,7 +53,7 @@ test {
 }
 
 dependencies {
-    compileOnly project(":lib-tools")
+    compileOnly project(":lib-extras")
     compileOnly 'com.google.code.gson:gson:2.10.1'
     testImplementation 'com.google.code.gson:gson:2.10.1'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
