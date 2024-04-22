@@ -42,7 +42,6 @@ test {
 }
 
 dependencies {
-    compileOnly project(":lib-tools")
     compileOnly 'com.google.code.gson:gson:2.10.1'
     testImplementation 'com.google.code.gson:gson:2.10.1'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
